@@ -86,7 +86,7 @@ Step 9 : k=5 image, k=20 image, k=50 image (all base64), PSNR + SSIM per k
 
 ---
 
-## Resume line (after finishing)
+
 A full-stack image deblurring web app implementing a 9-step
 linear algebra pipeline (RREF, Gram-Schmidt, least squares, SVD)
 with an interactive visual breakdown of each stage. PSNR improved
