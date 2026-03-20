@@ -96,15 +96,17 @@ function makeCard(index) {
 
 function body(card) { return card.querySelector(".card-body"); }
 
-function imgBlock(b64, label, best = false) {
-  return `<div class="img-block${best ? " best" : ""}">
+function imgBlock(b64, label, best = false, extraClass = "") {
+  return `<div class="img-block${best ? " best" : ""}${extraClass ? " " + extraClass : ""}">
     <img src="data:image/png;base64,${b64}" />
     <span class="img-lbl${best ? " accent" : ""}">${label}</span>
   </div>`;
 }
 
 function matrixBox(rows) {
-  return `<div class="matrix-box">${rows.map(r => "[ " + r.map(v => String(v).padStart(7)).join("  ") + " ]").join("<br>")}<br>[ &nbsp;&nbsp;⋮ &nbsp;&nbsp;&nbsp;⋮ &nbsp;&nbsp;&nbsp;⋮ &nbsp;&nbsp;⋱ ]</div>`;
+  return `<div class="matrix-box">${rows.map(r =>
+    "[ " + r.map(v => String(v).padStart(7)).join("  ") + " ]"
+  ).join("<br>")}<br>[ &nbsp;&nbsp;⋮ &nbsp;&nbsp;&nbsp;⋮ &nbsp;&nbsp;&nbsp;⋮ &nbsp;&nbsp;⋱ ]</div>`;
 }
 
 function metrics(items) {
@@ -113,16 +115,23 @@ function metrics(items) {
   ).join("")}</div>`;
 }
 
+function arrow() {
+  return `<span class="arrow-sep">→</span>`;
+}
+
 
 function renderStep1(s) {
   const card = makeCard(0);
   body(card).innerHTML = `
     <div class="img-row">
       ${imgBlock(s.original_image, "original image")}
-      <span style="align-self:center;font-size:1.2rem;color:#aaa">→</span>
+      ${arrow()}
       ${matrixBox(s.matrix_preview)}
     </div>
-    ${metrics([[s.shape[0] + "×" + s.shape[1], "matrix size"], [s.shape[0] * s.shape[1], "total pixels"]])}
+    ${metrics([
+    [s.shape[0] + "×" + s.shape[1], "matrix size"],
+    [s.shape[0] * s.shape[1], "total pixels"]
+  ])}
   `;
   return card;
 }
@@ -132,10 +141,14 @@ function renderStep2(s) {
   body(card).innerHTML = `
     <div class="img-row">
       ${imgBlock(s.blurred_image, "blurred image")}
-      <span style="align-self:center;font-size:1.2rem;color:#aaa">→</span>
+      ${arrow()}
       ${matrixBox(s.rref_preview)}
     </div>
-    ${metrics([[s.rank, "rank"], [s.nullity, "nullity"], [s.pivots.length, "pivot columns"]])}
+    ${metrics([
+    [s.rank, "rank"],
+    [s.nullity, "nullity"],
+    [s.pivots.length, "pivot columns"]
+  ])}
   `;
   return card;
 }
@@ -143,8 +156,11 @@ function renderStep2(s) {
 function renderStep3(s) {
   const card = makeCard(2);
   body(card).innerHTML = `
-    ${metrics([[s.rank, "rank"], [s.nullity, "nullity"]])}
-    <div style="font-size:0.78rem;color:#888;margin-top:6px">${s.theorem}</div>
+    ${metrics([
+    [s.rank, "rank"],
+    [s.nullity, "nullity"]
+  ])}
+    <div style="font-size:0.78rem;color:#888;margin-top:8px;">${s.theorem}</div>
   `;
   return card;
 }
@@ -152,8 +168,11 @@ function renderStep3(s) {
 function renderStep4(s) {
   const card = makeCard(3);
   body(card).innerHTML = `
-    ${metrics([[s.rank, "independent cols"], [s.singular_values_preview[0], "largest singular val"]])}
-    <div style="font-size:0.75rem;color:#888;margin-top:8px">
+    ${metrics([
+    [s.rank, "independent cols"],
+    [s.singular_values_preview[0], "largest singular value"]
+  ])}
+    <div style="font-size:0.76rem;color:#888;margin-top:10px;">
       top singular values: ${s.singular_values_preview.join(", ")}
     </div>
   `;
@@ -166,9 +185,9 @@ function renderStep5(s) {
     ${metrics([
     [s.num_vectors_in, "vectors in"],
     [s.num_vectors_out, "orthogonal vectors out"],
-    [s.dot_product_check, "dot product (≈0?)"]
+    [s.dot_product_check, "dot product (≈ 0?)"]
   ])}
-    <div style="font-size:0.75rem;margin-top:6px;color:${s.is_orthogonal ? "#0F6E56" : "#993C1D"}">
+    <div style="font-size:0.78rem;margin-top:8px;color:${s.is_orthogonal ? "#0F6E56" : "#993C1D"};">
       ${s.is_orthogonal ? "✓ orthogonality confirmed" : "⚠ check your vectors"}
     </div>
   `;
@@ -181,7 +200,9 @@ function renderStep6(s) {
     <div class="img-row">
       ${imgBlock(s.projected_image, "projected image")}
     </div>
-    ${metrics([[s.is_idempotent ? "yes" : "no", "P² = P (idempotent)?"]])}
+    ${metrics([
+    [s.is_idempotent ? "yes" : "no", "P² = P (idempotent)?"]
+  ])}
   `;
   return card;
 }
@@ -190,9 +211,11 @@ function renderStep7(s) {
   const card = makeCard(6);
   body(card).innerHTML = `
     <div class="img-row">
-      ${imgBlock(s.recovered_image, "LS recovered")}
+      ${imgBlock(s.recovered_image, "least squares recovered")}
     </div>
-    ${metrics([[s.psnr + " dB", "PSNR"]])}
+    ${metrics([
+    [s.psnr + " dB", "PSNR"]
+  ])}
   `;
   return card;
 }
@@ -201,10 +224,12 @@ function renderStep8(s) {
   const card = makeCard(7);
   body(card).innerHTML = `
     <div class="img-row">
-      <img src="data:image/png;base64,${s.spectrum_plot}" style="width:100%;max-width:320px;border-radius:6px;" />
+      <img class="spectrum-plot" src="data:image/png;base64,${s.spectrum_plot}" />
     </div>
-    ${metrics([[s.dominant_eigenvalue, "dominant eigenvalue"]])}
-    <div style="font-size:0.75rem;color:#888;margin-top:6px">
+    ${metrics([
+    [s.dominant_eigenvalue, "dominant eigenvalue"]
+  ])}
+    <div style="font-size:0.76rem;color:#888;margin-top:8px;">
       top eigenvalues: ${s.eigenvalues_preview.join(", ")}
     </div>
   `;
@@ -218,12 +243,21 @@ function renderStep9(s) {
   const best = keys.reduce((a, b) => r[a].psnr > r[b].psnr ? a : b);
   body(card).innerHTML = `
     <div class="img-row">
-      ${keys.map(k => imgBlock(r[k].image, `k=${k.replace("k", "")} · ${r[k].psnr}dB`, k === best)).join(
-    `<span style="align-self:center;font-size:1.2rem;color:#aaa">→</span>`
-  )}
+      ${keys.map((k, i) => `
+        ${i > 0 ? arrow() : ""}
+        <div class="img-block svd${k === best ? " best" : ""}">
+          <img src="data:image/png;base64,${r[k].image}" />
+          <span class="img-lbl${k === best ? " accent" : ""}">
+            k = ${k.replace("k", "")} · ${r[k].psnr} dB
+          </span>
+        </div>
+      `).join("")}
     </div>
-    ${metrics([[r[best].psnr + " dB", "best PSNR"], [r[best].ssim, "SSIM"], [best.replace("k", ""), "optimal k"]])}
+    ${metrics([
+    [r[best].psnr + " dB", "best PSNR"],
+    [r[best].ssim, "SSIM"],
+    [best.replace("k", ""), "optimal k"]
+  ])}
   `;
   return card;
 }
-

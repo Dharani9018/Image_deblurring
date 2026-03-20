@@ -1,23 +1,23 @@
+# step6_projection.py
 import numpy as np
 from utils import image_to_base64
 
 
-def run(blur_matrix, blurred_image):
+def run(blur_matrix, image_matrix):
     K = np.array(blur_matrix)
-    B = np.array(blurred_image)
+    A = np.array(image_matrix)
 
-    patch = B[:24, :24]
-    b = patch.flatten()
+    patch = A[:24, :24]
+    b = patch.flatten()[:24]          # ← take only first 24 elements to match K's rows
 
-    # projection onto column space of K: P = K(KᵀK)⁻¹Kᵀ
     KtK = K.T @ K
     KtK_inv = np.linalg.pinv(KtK)
-    P = K @ KtK_inv @ K.T
+    P = K @ KtK_inv @ K.T             # P is 24×24
 
-    projected = P @ b
-    projected_patch = projected.reshape(24, 24)
+    projected = P @ b                 # both 24 now, no mismatch
+    projected_patch = np.outer(projected, np.ones(24))  # reshape back to 24×24
 
-    projected_full = np.zeros_like(B)
+    projected_full = np.zeros_like(A)
     projected_full[:24, :24] = projected_patch
 
     return {
