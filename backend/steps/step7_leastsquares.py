@@ -1,27 +1,31 @@
 import numpy as np
+from skimage.metrics import peak_signal_noise_ratio as psnr
 from utils import image_to_base64
 
 
-def run(blur_matrix, image_matrix, original_image):
+def run(blur_matrix, blurred_image, original_image):
     K = np.array(blur_matrix)
-    A = np.array(image_matrix)
+    B = np.array(blurred_image).astype(np.float64)
+    A = np.array(original_image).astype(np.float64)
 
-    KtK = K.T @ K
-    KtK_inv = np.linalg.pinv(KtK)
-    P = K @ KtK_inv @ K.T
+    recovered_full = B.copy()
 
-    projected_full = A.copy()          # start with full image, not zeros
+    for col in range(B.shape[1]):
+        x_hat, _, _, _ = np.linalg.lstsq(K, B[:24, col], rcond=None)
+        recovered_full[:24, col] = x_hat
 
-    for col in range(A.shape[1]):
-        b_col = A[:24, col]
-        projected_full[:24, col] = P @ b_col
-        # rows 24–64 stay as original — no black patch
+    recovered_full = np.clip(recovered_full, 0, 255)
 
-    projected_full = np.clip(projected_full, 0, 255)
+    orig_u8 = np.clip(A, 0, 255).astype(np.uint8)
+    rec_u8 = recovered_full.astype(np.uint8)
+
+    try:
+        psnr_score = round(float(psnr(orig_u8, rec_u8, data_range=255)), 2)
+    except Exception:
+        psnr_score = 0.0
 
     return {
-        "projected_image": image_to_base64(projected_full),
-        "projection_matrix_preview": [[round(float(P[i][j]), 4) for j in range(4)]
-                                      for i in range(4)],
-        "is_idempotent": bool(np.allclose(P @ P, P, atol=1e-6))
+        "recovered_image": image_to_base64(recovered_full),
+        "psnr": psnr_score,
+        "x_hat_preview": [round(float(v), 3) for v in recovered_full[0, :6].tolist()]
     }
