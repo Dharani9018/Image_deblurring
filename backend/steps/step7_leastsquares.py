@@ -3,29 +3,27 @@ from skimage.metrics import peak_signal_noise_ratio as psnr
 from utils import image_to_base64
 
 
-def run(blur_matrix, blurred_image, original_image):
+def run(blur_matrix, blurred_matrix, original_matrix):
     K = np.array(blur_matrix)
-    B = np.array(blurred_image).astype(np.float64)
-    A = np.array(original_image).astype(np.float64)
+    B = np.array(blurred_matrix).astype(np.float64)
+    A = np.array(original_matrix).astype(np.float64)
 
-    recovered_full = B.copy()
+    lam = 0.01
+    KtK = K.T @ K
+    K_reg_inv = np.linalg.solve(KtK + lam * np.eye(KtK.shape[0]), K.T)
 
-    for col in range(B.shape[1]):
-        x_hat, _, _, _ = np.linalg.lstsq(K, B[:24, col], rcond=None)
-        recovered_full[:24, col] = x_hat
-
-    recovered_full = np.clip(recovered_full, 0, 255)
-
-    orig_u8 = np.clip(A, 0, 255).astype(np.uint8)
-    rec_u8 = recovered_full.astype(np.uint8)
+    # recover: solve row-wise and column-wise
+    recovered = K_reg_inv @ B @ K_reg_inv.T
+    recovered = np.clip(recovered, 0, 255)
 
     try:
-        psnr_score = round(float(psnr(orig_u8, rec_u8, data_range=255)), 2)
+        psnr_score = round(float(psnr(
+            A.astype(np.uint8), recovered.astype(np.uint8), data_range=255)), 2)
     except Exception:
         psnr_score = 0.0
 
     return {
-        "recovered_image": image_to_base64(recovered_full),
+        "recovered_image": image_to_base64(recovered),
         "psnr": psnr_score,
-        "x_hat_preview": [round(float(v), 3) for v in recovered_full[0, :6].tolist()]
+        "x_hat_preview": [round(float(v), 3) for v in recovered[0, :6].tolist()]
     }

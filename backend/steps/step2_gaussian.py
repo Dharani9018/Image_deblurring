@@ -1,48 +1,64 @@
 import numpy as np
 from scipy.linalg import lu
-from sympy import Matrix
 from utils import image_to_base64, matrix_preview
-from scipy.ndimage import uniform_filter
 
 
-def build_blur_kernel(size=24):
+def build_gaussian_kernel(size, sigma=2.0):
+    k = np.arange(size)
+    center = size // 2
+    g = np.exp(-0.5 * ((k - center) / sigma) ** 2)
+    g = g / g.sum()
     K = np.zeros((size, size))
     for i in range(size):
         for j in range(size):
-            if abs(i - j) <= 2:
-                K[i][j] = 1.0 / (2 * 2 + 1)
+            K[i, j] = g[abs(i - j) % size]
     return K
 
 
+def numpy_rref_preview(matrix, size=4):
+    M = matrix[:size, :size].astype(float).copy()
+    rows, cols = M.shape
+    for col in range(cols):
+        pivot = None
+        for row in range(col, rows):
+            if abs(M[row, col]) > 1e-10:
+                pivot = row
+                break
+        if pivot is None:
+            continue
+        M[[col, pivot]] = M[[pivot, col]]
+        M[col] = M[col] / M[col, col]
+        for row in range(rows):
+            if row != col:
+                M[row] -= M[row, col] * M[col]
+    return [[round(float(v), 2) for v in row] for row in M]
+
+
 def run(image_matrix):
-    A = np.array(image_matrix)
+    A = np.array(image_matrix).astype(np.float64)
+    size = A.shape[0]
 
-    # blur the FULL image using a simple uniform filter so it looks visually blurred
-    blurred_full = uniform_filter(A, size=9).astype(np.float64)
+    K = build_gaussian_kernel(size, sigma=2.0)
 
-    # still use the 24×24 patch for the linear algebra parts
-    patch = A[:24, :24]
-    K = build_blur_kernel(24)
-    blurred_patch = K @ patch
+    blurred = np.clip(K @ A @ K.T, 0, 255)
 
-    # RREF using sympy
-    sym_K = Matrix(K.tolist())
-    rref_matrix, pivots = sym_K.rref()
-    rref_preview = [[float(rref_matrix[i, j]) for j in range(min(4, K.shape[1]))]
-                    for i in range(min(4, K.shape[0]))]
+    rref_preview = numpy_rref_preview(K, size=4)
 
-    # LU decomposition
-    P, L, U = lu(K)
+    K_small = K[:8, :8]
+    P, L, U = lu(K_small)
 
-    rank = len(pivots)
-    nullity = K.shape[1] - rank
+    rank_full = int(np.linalg.matrix_rank(K))
+    nullity = size - rank_full
+
+    pivots = [i for i in range(K_small.shape[0]) if abs(U[i, i]) > 1e-10]
 
     return {
-        "blurred_image": image_to_base64(blurred_full),
+        "blurred_image": image_to_base64(blurred),
+        "blurred_matrix": blurred.tolist(),
         "blur_matrix": K.tolist(),
         "rref_preview": rref_preview,
-        "pivots": list(pivots),
-        "rank": rank,
+        "pivots": pivots,
+        "rank": rank_full,
         "nullity": nullity,
         "L_preview": matrix_preview(L),
         "U_preview": matrix_preview(U)
