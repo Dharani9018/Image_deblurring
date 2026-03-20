@@ -2,10 +2,10 @@ import numpy as np
 from scipy.linalg import lu
 from sympy import Matrix
 from utils import image_to_base64, matrix_preview
+from scipy.ndimage import uniform_filter
 
 
 def build_blur_kernel(size=24):
-    # motion blur kernel as a matrix
     K = np.zeros((size, size))
     for i in range(size):
         for j in range(size):
@@ -16,12 +16,14 @@ def build_blur_kernel(size=24):
 
 def run(image_matrix):
     A = np.array(image_matrix)
-    patch = A[:24, :24]
 
+    # blur the FULL image using a simple uniform filter so it looks visually blurred
+    blurred_full = uniform_filter(A, size=9).astype(np.float64)
+
+    # still use the 24×24 patch for the linear algebra parts
+    patch = A[:24, :24]
     K = build_blur_kernel(24)
     blurred_patch = K @ patch
-    blurred_full = np.zeros_like(A)
-    blurred_full[:24, :24] = blurred_patch
 
     # RREF using sympy
     sym_K = Matrix(K.tolist())
