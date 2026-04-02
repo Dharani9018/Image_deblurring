@@ -8,10 +8,11 @@ def build_gaussian_kernel(size, sigma=2.0):
     center = size // 2
     g = np.exp(-0.5 * ((k - center) / sigma) ** 2)
     g = g / g.sum()
+
     K = np.zeros((size, size))
     for i in range(size):
         for j in range(size):
-            K[i, j] = g[abs(i - j) % size]
+            K[i, j] = g[abs(i - j)]
     return K
 
 
@@ -40,6 +41,8 @@ def run(image_matrix):
 
     K = build_gaussian_kernel(size, sigma=2.0)
 
+    cond = round(float(np.linalg.cond(K)), 2)
+
     blurred = np.clip(K @ A @ K.T, 0, 255)
 
     rref_preview = numpy_rref_preview(K, size=4)
@@ -60,6 +63,7 @@ def run(image_matrix):
         "pivots": pivots,
         "rank": rank_full,
         "nullity": nullity,
+        "condition_number": cond,
         "L_preview": matrix_preview(L),
         "U_preview": matrix_preview(U)
     }

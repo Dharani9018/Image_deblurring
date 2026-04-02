@@ -24,21 +24,15 @@ def process():
     s3 = step3_subspaces.run(s2["blur_matrix"])
     s4 = step4_independence.run(s2["blur_matrix"])
     s5 = step5_gramschmidt.run(s2["blur_matrix"])
-    s6 = step6_projection.run(s2["blur_matrix"], s1["matrix"])
-    s7 = step7_leastsquares.run(s2["blur_matrix"], s1["matrix"], s1["matrix"])
+    s6 = step6_projection.run(s2["blur_matrix"], s2["blurred_matrix"])
+    s7 = step7_leastsquares.run(s2["blur_matrix"], s2["blurred_matrix"], s1["matrix"])
     s8 = step8_eigenvalues.run(s2["blur_matrix"])
-    s9 = step9_svd.run(s2["blur_matrix"], s1["matrix"], s1["matrix"])
+    s9 = step9_svd.run(s2["blur_matrix"], s2["blurred_matrix"], s1["matrix"])
 
     return jsonify({
-        "step1": s1,
-        "step2": s2,
-        "step3": s3,
-        "step4": s4,
-        "step5": s5,
-        "step6": s6,
-        "step7": s7,
-        "step8": s8,
-        "step9": s9
+        "step1": s1, "step2": s2, "step3": s3,
+        "step4": s4, "step5": s5, "step6": s6,
+        "step7": s7, "step8": s8, "step9": s9
     })
 
 

@@ -7,11 +7,9 @@ def run(blur_matrix):
     rank = int(np.linalg.matrix_rank(K))
     nullity = K.shape[1] - rank
 
-    # column space — linearly independent columns
-    _, _, Vt = np.linalg.svd(K)
-    col_space_basis = Vt[:rank].tolist()
-
-    # null space via SVD (rows of Vt corresponding to near-zero singular values)
+    
+    U, S, Vt = np.linalg.svd(K)
+    col_space_basis = U[:, :rank].T.tolist()
     null_space_basis = Vt[rank:].tolist()
 
     return {

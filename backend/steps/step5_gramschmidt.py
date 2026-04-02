@@ -4,9 +4,9 @@ import numpy as np
 def gram_schmidt(vectors):
     basis = []
     for v in vectors:
-        w = v.copy()
+        w = v.copy().astype(float)
         for b in basis:
-            w -= np.dot(v, b) * b
+            w -= np.dot(w, b) * b  
         norm = np.linalg.norm(w)
         if norm > 1e-10:
             basis.append(w / norm)
@@ -17,12 +17,9 @@ def run(blur_matrix):
     K = np.array(blur_matrix)
     rank = int(np.linalg.matrix_rank(K))
 
-    # take independent columns as input vectors
-    vectors = [K[:, i] for i in range(rank)]
-
+    vectors = [K[:, i] for i in range(min(rank, 10))]
     ortho_basis = gram_schmidt(vectors)
 
-    # verify orthogonality — dot products should be near zero
     dot_check = float(np.dot(ortho_basis[0], ortho_basis[1])) if len(ortho_basis) > 1 else 0.0
 
     return {

@@ -6,8 +6,12 @@ from PIL import Image
 
 
 def image_to_base64(image_array):
-    image_array = np.clip(image_array, 0, 255).astype(np.uint8)
-    img = Image.fromarray(image_array)
+    arr = np.array(image_array)
+    arr = np.clip(arr, 0, 255).astype(np.uint8)
+    if arr.ndim == 3:
+        img = Image.fromarray(arr, mode="RGB")
+    else:
+        img = Image.fromarray(arr)
     buffer = io.BytesIO()
     img.save(buffer, format="PNG")
     return base64.b64encode(buffer.getvalue()).decode("utf-8")
@@ -21,5 +25,5 @@ def plot_to_base64(fig):
 
 
 def matrix_preview(matrix, size=4):
-    preview = matrix[:size, :size].tolist()
-    return [[round(v, 2) for v in row] for row in preview]
+    preview = np.array(matrix)[:size, :size].tolist()
+    return [[round(float(v), 2) for v in row] for row in preview]

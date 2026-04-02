@@ -4,23 +4,22 @@ import numpy as np
 def run(blur_matrix):
     K = np.array(blur_matrix)
 
-    # find linearly independent columns using QR with pivoting
-    Q, R, pivot = np.linalg.qr(K, mode='complete'), None, None
-    _, R, pivot = np.linalg.svd(K), None, None
+    Q, R, pivot = np.linalg.svd(K, full_matrices=False), None, None
+    _, R_qr, pivot_qr = np.linalg.svd(K), None, None
 
-    # simpler: use rank to find independent columns
+    Q_qr, R_qr = np.linalg.qr(K)
     rank = int(np.linalg.matrix_rank(K))
+    diag_R = np.abs(np.diag(R_qr))
+
+    threshold = diag_R.max() * 1e-10
+    independent_cols = [int(i) for i in range(len(diag_R)) if diag_R[i] > threshold][:rank]
+
     singular_values = np.linalg.svd(K, compute_uv=False)
-
-    # columns with non-negligible contribution
-    independent_cols = list(range(rank))
-
-    basis = K[:, independent_cols].tolist()
 
     return {
         "rank": rank,
-        "independent_columns": independent_cols,
-        "basis_preview": [[round(basis[i][j], 3) for j in range(min(4, len(basis[0])))]
-                          for i in range(min(4, len(basis)))],
+        "independent_columns": independent_cols[:8],
+        "basis_preview": [[round(float(K[i][j]), 3) for j in range(min(4, K.shape[1]))]
+                          for i in independent_cols[:4]],
         "singular_values_preview": [round(float(s), 4) for s in singular_values[:6]]
     }

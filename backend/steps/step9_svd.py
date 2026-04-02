@@ -11,9 +11,8 @@ def truncated_svd_recover(K, B, k, lam=0.01):
     Vt_k = Vt[:k, :]
     S_inv = S_k / (S_k ** 2 + lam)
     K_pinv = Vt_k.T @ np.diag(S_inv) @ U_k.T
-
-    recovered = K_pinv @ B @ K_pinv.T
-    return np.clip(recovered, 0, 255)
+    recovered = np.clip(K_pinv @ B @ K_pinv.T, 0, 255)
+    return recovered
 
 
 def run(blur_matrix, blurred_matrix, original_matrix):

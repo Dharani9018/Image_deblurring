@@ -12,9 +12,7 @@ def run(blur_matrix, blurred_matrix, original_matrix):
     KtK = K.T @ K
     K_reg_inv = np.linalg.solve(KtK + lam * np.eye(KtK.shape[0]), K.T)
 
-    # recover: solve row-wise and column-wise
-    recovered = K_reg_inv @ B @ K_reg_inv.T
-    recovered = np.clip(recovered, 0, 255)
+    recovered = np.clip(K_reg_inv @ B @ K_reg_inv.T, 0, 255)
 
     try:
         psnr_score = round(float(psnr(
